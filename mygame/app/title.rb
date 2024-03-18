@@ -2,7 +2,7 @@ require "app/defaults.rb"
 require "app/common.rb"
 
 def tick_title_scene
-  outputs.sprites << { x: 0, y: 0, w: 1280, h: 720, path: "sprites/snow.png" }
+  draw_background_snow
 
   outputs.labels << { x: 640, y: 665, text: "Snowball Santa", size_enum: 50, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf",  r: 187, g: 1, b: 11 }
   long_string = "Santa's presents are getting scattered all over the North Pole! The polar bears have come out to investigate - you and your team of elves need to help Santa collect the gifts! Santa will throw snowballs to try and keep the bears away, while the elves retrieve what they can!"

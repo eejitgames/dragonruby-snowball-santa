@@ -24,3 +24,7 @@ def boxed_label(boxed_label:, box_color:)
   outputs.borders << { x: x, y: y - 1, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255 }
   outputs.borders << { x: x + 1, y: y - 1, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255 }
 end
+
+def draw_background_snow
+  outputs.sprites << { x: 0, y: 0, w: 1280, h: 720, path: "sprites/snow.png" }
+end

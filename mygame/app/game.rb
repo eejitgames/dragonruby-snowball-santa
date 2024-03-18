@@ -1,6 +1,7 @@
 require "app/input.rb"
 require "app/calc.rb"
 require "app/render.rb"
+require "app/common.rb"
 
 def tick_game_scene
   outputs.labels << { x: 640, y: 360, text: "Game Scene (click to go to game over)", alignment_enum: 1 }
@@ -22,10 +23,10 @@ def tick_game_scene
 	loop
 =end
 
-  putz "game_tick_count: #{state.game_tick_count}"
-  putz "mouse x: #{state.mouse.x}"
-  putz "mouse y: #{state.mouse.y}"
-  putz "clicked: #{state.mouse.clicked}"
+  # putz "game_tick_count: #{state.game_tick_count}"
+  # putz "mouse x: #{state.mouse.x}"
+  # putz "mouse y: #{state.mouse.y}"
+  # putz "clicked: #{state.mouse.clicked}"
 
   state.next_scene = :tick_game_over_scene if inputs.mouse.click && inputs.mouse.y < 65
 end
