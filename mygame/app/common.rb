@@ -1,7 +1,7 @@
-def multiline_label(long_string:, max_character_length:, label_starting_x:, label_starting_y:)
+def multiline_label(long_string:, max_character_length:, label_starting_x:, label_starting_y:, label_color:)
   long_strings_split = String.wrapped_lines long_string, max_character_length # no AttrGTK shortcut, can use the class method with . or String::wrapped_lines
   outputs.labels << long_strings_split.map_with_index do |s, i|
-    { x: label_starting_x, y: label_starting_y - (i * 60), text: s, size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf", r: 10, g: 230, b: 10 }
+    { x: label_starting_x, y: label_starting_y - (i * 60), text: s, size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf", r: label_color.r, g: label_color.g, b: label_color.b, a: 255 }
   end
 end
 
