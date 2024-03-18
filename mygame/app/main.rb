@@ -1,7 +1,7 @@
-require 'app/title.rb'
-require 'app/game.rb'
-require 'app/game_over.rb'
-require 'app/game_paused.rb'
+require "app/title.rb"
+require "app/game.rb"
+require "app/game_over.rb"
+require "app/game_paused.rb"
 
 include AttrGTK
 
