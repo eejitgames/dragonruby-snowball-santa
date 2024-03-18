@@ -3,5 +3,6 @@ def defaults
 
   state.game_tick_count = state.tick_count
   state.number_of_rows = 8
+  state.player.row = 0
   state.defaults_set = true
 end
