@@ -23,6 +23,9 @@ def tick_game_scene
 =end
 
   putz "game_tick_count: #{state.game_tick_count}"
+  putz "mouse x: #{state.mouse.x}"
+  putz "mouse y: #{state.mouse.y}"
+  putz "clicked: #{state.mouse.clicked}"
 
-  state.next_scene = :tick_game_over_scene if inputs.mouse.click
+  state.next_scene = :tick_game_over_scene if inputs.mouse.click && inputs.mouse.y < 65
 end

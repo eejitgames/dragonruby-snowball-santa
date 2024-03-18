@@ -6,4 +6,14 @@ def input
   # divide screen into 8 rows
   # leave top and bottom clear
   # 6 middle ones are elf runs
+
+  # determine if the user tapped a row
+  # also what row should be highlighted
+  state.mouse.x = inputs.mouse.x
+  state.mouse.y = inputs.mouse.y
+  if inputs.mouse.button_left
+    state.mouse.clicked = :yes
+  else
+    state.mouse.clicked = :no
+  end
 end
