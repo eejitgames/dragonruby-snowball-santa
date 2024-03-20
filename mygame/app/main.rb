@@ -20,7 +20,7 @@ def tick_title_scene
 
   outputs.labels << { x: 640, y: 665, text: "Snowball Santa", size_enum: 50, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf",  r: 187, g: 1, b: 11 }
   long_string = "Santa's presents are getting scattered all over the North Pole! The polar bears have come out to investigate - you and your team of elves need to help Santa collect the gifts! Santa will throw snowballs to try and keep the bears away, while the elves retrieve what they can!"
-  draw_multiline_label(long_string: long_string, max_character_length: 50, label_starting_x: 640, label_starting_y: 537, label_color: {r: 0, g: 92, b: 0})
+  draw_multiline_label(long_string: long_string, max_character_length: 50, label_x: 640, label_y: 537, label_color: {r: 0, g: 92, b: 0})
   draw_boxed_label(boxed_label: { x: 640, y: 126, text: "Let's help Santa!", size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf",  r: 0, g: 92, b: 0 }, box_color: {r: 187, g: 1, b: 11})
 
   defaults if state.defaults_set.nil?
@@ -33,11 +33,13 @@ def tick_title_scene
 end
 
 def tick_game_scene
-  outputs.labels << { x: 640, y: 360, text: "Game Scene (click to go to game over)", alignment_enum: 1 }
+  # outputs.labels << { x: 640, y: 360, text: "Game Scene (click to go to game over)", alignment_enum: 1 }
 
   game_is_paused?
-  game_input
-  game_calc
+  if state.game.paused == :no
+    game_input
+    game_calc
+  end
   game_render
 
   state.next_scene = :tick_game_over_scene if inputs.mouse.click && state.player.row == 0
@@ -58,9 +60,11 @@ end
 def game_is_paused?
   if !inputs.keyboard.has_focus && state.tick_count != 0
     audio[:music].paused = true if audio[:music].paused == false
+    state.game.paused = :yes
   else
     audio[:music].paused = false if audio[:music].paused == true
     state.game_tick_count += 1
+    state.game.paused = :no
   end
 end
 
@@ -72,7 +76,7 @@ def game_input
 
   # the top and bottom rows are not used as part of the regular gameplay, i.e. if there are 8 rows, then 0 and 7 are not used
   # also subtract one from the max, as a row can be found in the window title
-  state.player.row = ((state.mouse.y / (720 / state.number_of_rows)).to_i).cap_min_max(0, state.number_of_rows - 1)
+  state.player.row = ((state.mouse.y / state.player.row_height).to_i).cap_min_max(0, state.number_of_rows - 1)
 
   if inputs.mouse.button_left
     state.mouse.clicked = :yes
@@ -270,12 +274,58 @@ end
 
 def game_render
   draw_background_snow
+  draw_game_info
+  draw_snowball_shadows
+  draw_presents
+  draw_elves
+  draw_bears
+  draw_santa
+  draw_snowballs
+  draw_row_highlight
 end
 
-def draw_multiline_label(long_string:, max_character_length:, label_starting_x:, label_starting_y:, label_color:)
+def draw_background_snow
+  outputs.sprites << { x: 0, y: 0, w: 1280, h: 720, path: "sprites/snow.png" }
+end
+
+def draw_game_info
+end
+
+def draw_snowball_shadows
+end
+
+def draw_presents
+end
+
+def draw_elves
+end
+
+def draw_bears
+end
+
+def draw_santa
+end
+
+def draw_snowballs
+end
+
+def draw_row_highlight
+    args.outputs.borders << {
+    x: 200,
+    y: (state.player.row.cap_min_max(1, state.number_of_rows - 2) * state.player.row_height),
+    w: 1000,
+    h: state.player.row_height,
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 255
+  }
+end
+
+def draw_multiline_label(long_string:, max_character_length:, label_x:, label_y:, label_color:)
   long_strings_split = String.wrapped_lines long_string, max_character_length # no AttrGTK shortcut, can use the class method with . or String::wrapped_lines
   outputs.labels << long_strings_split.map_with_index do |s, i|
-    { x: label_starting_x, y: label_starting_y - (i * 60), text: s, size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf", r: label_color.r, g: label_color.g, b: label_color.b, a: 255 }
+    { x: label_x, y: label_y - (i * 60), text: s, size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf", r: label_color.r, g: label_color.g, b: label_color.b, a: 255 }
   end
 end
 
@@ -296,15 +346,12 @@ def draw_boxed_label(boxed_label:, box_color:)
   outputs.borders << { x: x + 1, y: y - 1, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255 }
 end
 
-def draw_background_snow
-  outputs.sprites << { x: 0, y: 0, w: 1280, h: 720, path: "sprites/snow.png" }
-end
-
 def defaults
   audio[:music] ||= { input: "sounds/mixkit-christmas-gifts-862.ogg", x: 0.0, y: 0.0, z: 0.0, gain: 1.0, pitch: 1.0, paused: false, looping: true, }
 
   state.game_tick_count = state.tick_count
   state.number_of_rows = 8
+  state.player.row_height = (720 / state.number_of_rows).to_i
   state.player.row = 0
   state.defaults_set = true
 end
