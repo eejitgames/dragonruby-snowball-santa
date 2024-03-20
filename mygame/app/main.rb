@@ -18,10 +18,10 @@ end
 def tick_title_scene
   draw_background_snow
 
-  outputs.labels << { x: 640, y: 665, text: "Snowball Santa", size_enum: 50, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf",  r: 187, g: 1, b: 11 }
+  outputs.primitives << { x: 640, y: 665, text: "Snowball Santa", size_enum: 50, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf",  r: 187, g: 1, b: 11, primitive_marker: :label }
   long_string = "Santa's presents are getting scattered all over the North Pole! The polar bears have come out to investigate - you and your team of elves need to help Santa collect the gifts! Santa will throw snowballs to try and keep the bears away, while the elves retrieve what they can!"
   draw_multiline_label(long_string: long_string, max_character_length: 50, label_x: 640, label_y: 537, label_color: {r: 0, g: 92, b: 0})
-  draw_boxed_label(boxed_label: { x: 640, y: 126, text: "Let's help Santa!", size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf",  r: 0, g: 92, b: 0 }, box_color: {r: 187, g: 1, b: 11})
+  draw_boxed_label(boxed_label: { x: 640, y: 126, text: "Let's help Santa!", size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf",  r: 0, g: 92, b: 0, primitive_marker: :label }, box_color: {r: 187, g: 1, b: 11})
 
   defaults if state.defaults_set.nil?
   game_is_paused?
@@ -33,7 +33,7 @@ def tick_title_scene
 end
 
 def tick_game_scene
-  # outputs.labels << { x: 640, y: 360, text: "Game Scene (click to go to game over)", alignment_enum: 1 }
+  # outputs.primitives << { x: 640, y: 360, text: "Game Scene (click to go to game over)", alignment_enum: 1, primitive_marker: :label }
 
   game_is_paused?
   if state.game.paused == :no
@@ -42,12 +42,12 @@ def tick_game_scene
   end
   game_render
 
-  state.next_scene = :tick_game_over_scene if inputs.mouse.click && state.player.row == 0
+  state.next_scene = :tick_game_over_scene if inputs.mouse.click && state.player.row_mouse == 0
 end
 
 def tick_game_over_scene
   draw_background_snow
-  outputs.labels << { x: 640, y: 360, text: "Game Over Scene (click to go to title)", alignment_enum: 1 }
+  outputs.primitives << { x: 640, y: 360, text: "Game Over Scene (click to go to title)", alignment_enum: 1, primitive_marker: :label }
 
   game_is_paused?
 
@@ -76,7 +76,9 @@ def game_input
 
   # the top and bottom rows are not used as part of the regular gameplay, i.e. if there are 8 rows, then 0 and 7 are not used
   # also subtract one from the max, as a row can be found in the window title
-  state.player.row = ((state.mouse.y / state.player.row_height).to_i).cap_min_max(0, state.number_of_rows - 1)
+  state.player.row_mouse = ((state.mouse.y / state.player.row_height).to_i).cap_min_max(0, state.number_of_rows - 1)
+  # in normal play, the top and bottom rows do not highlight. if there are 8 rows, rows 1 through 6 may highlight
+  state.player.row_highlight = (state.player.row_mouse.cap_min_max(1, state.number_of_rows - 2) * state.player.row_height)
 
   if inputs.mouse.button_left
     state.mouse.clicked = :yes
@@ -285,7 +287,7 @@ def game_render
 end
 
 def draw_background_snow
-  outputs.sprites << { x: 0, y: 0, w: 1280, h: 720, path: "sprites/snow.png" }
+  outputs.primitives << { x: 0, y: 0, w: 1280, h: 720, path: "sprites/snow.png", primitive_marker: :sprite }
 end
 
 def draw_game_info
@@ -310,27 +312,18 @@ def draw_snowballs
 end
 
 def draw_row_highlight
-    args.outputs.borders << {
-    x: 200,
-    y: (state.player.row.cap_min_max(1, state.number_of_rows - 2) * state.player.row_height),
-    w: 1000,
-    h: state.player.row_height,
-    r: 0,
-    g: 0,
-    b: 0,
-    a: 255
-  }
+  outputs.primitives << { x: 200, y: state.player.row_highlight, w: 1000, h: state.player.row_height, r: 176, g: 224, b: 230, a: 30, primitive_marker: :solid } # Powder Blue
 end
 
 def draw_multiline_label(long_string:, max_character_length:, label_x:, label_y:, label_color:)
   long_strings_split = String.wrapped_lines long_string, max_character_length # no AttrGTK shortcut, can use the class method with . or String::wrapped_lines
-  outputs.labels << long_strings_split.map_with_index do |s, i|
-    { x: label_x, y: label_y - (i * 60), text: s, size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf", r: label_color.r, g: label_color.g, b: label_color.b, a: 255 }
+  outputs.primitives << long_strings_split.map_with_index do |s, i|
+    { x: label_x, y: label_y - (i * 60), text: s, size_enum: 25, alignment_enum: 1, font: "fonts/MountainsofChristmas-Bold.ttf", r: label_color.r, g: label_color.g, b: label_color.b, a: 255, primitive_marker: :label }
   end
 end
 
 def draw_boxed_label(boxed_label:, box_color:)
-  outputs.labels << boxed_label
+  outputs.primitives << boxed_label
 
   s = (boxed_label.size_enum || 0)
   w, h = gtk.calcstringbox(boxed_label.text, s, boxed_label.font).map { |e| e + s }
@@ -340,10 +333,10 @@ def draw_boxed_label(boxed_label:, box_color:)
   x = boxed_label.x - [0, w/2, w].fetch(ae)
   y = boxed_label.y - [0, h/2, h].fetch(vae) + s/2
 
-  outputs.borders << { x: x, y: y, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255 }
-  outputs.borders << { x: x + 1, y: y, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255 }
-  outputs.borders << { x: x, y: y - 1, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255 }
-  outputs.borders << { x: x + 1, y: y - 1, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255 }
+  outputs.primitives << { x: x, y: y, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255, primitive_marker: :border }
+  outputs.primitives << { x: x + 1, y: y, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255, primitive_marker: :border }
+  outputs.primitives << { x: x, y: y - 1, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255, primitive_marker: :border }
+  outputs.primitives << { x: x + 1, y: y - 1, w: w, h: h, r: box_color.r, g: box_color.g, b: box_color.b, a: 255, primitive_marker: :border }
 end
 
 def defaults
@@ -352,7 +345,7 @@ def defaults
   state.game_tick_count = state.tick_count
   state.number_of_rows = 8
   state.player.row_height = (720 / state.number_of_rows).to_i
-  state.player.row = 0
+  state.player.row_mouse = 0
   state.defaults_set = true
 end
 
