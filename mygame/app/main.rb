@@ -57,9 +57,9 @@ end
 
 def game_is_paused?
   if !inputs.keyboard.has_focus && state.tick_count != 0
-    audio[:music].paused = true unless audio[:music].nil?
+    audio[:music].paused = true if audio[:music].paused == false
   else
-    audio[:music].paused = false unless audio[:music].nil?
+    audio[:music].paused = false if audio[:music].paused == true
     state.game_tick_count += 1
   end
 end
