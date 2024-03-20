@@ -40,19 +40,6 @@ def tick_game_scene
   game_calc
   game_render
 
-=begin
-	DoSanta()
-	DoBear()
-	DoElves()
-	If Snowballs.Length > -1 then DoSnowBalls()
- 	
-	If SantaGifts => GiftTarget then SantaWin()
-	If BearGifts => GiftTarget then BearWin()
-
-    Sync()
-	loop
-=end
-
   state.next_scene = :tick_game_over_scene if inputs.mouse.click && state.player.row == 0
 end
 
@@ -84,6 +71,7 @@ def game_input
   state.mouse.y = state.mouse.y.cap_min_max(0, 720).to_i
 
   # the top and bottom rows are not used as part of the regular gameplay, i.e. if there are 8 rows, then 0 and 7 are not used
+  # also subtract one from the max, as a row can be found in the window title
   state.player.row = ((state.mouse.y / (720 / state.number_of_rows)).to_i).cap_min_max(0, state.number_of_rows - 1)
 
   if inputs.mouse.button_left
@@ -95,6 +83,17 @@ end
 
 def game_calc
 =begin
+	DoSanta()
+	DoBear()
+	DoElves()
+	If Snowballs.Length > -1 then DoSnowBalls()
+
+	If SantaGifts => GiftTarget then SantaWin()
+	If BearGifts => GiftTarget then BearWin()
+
+    Sync()
+	loop
+
 Function DoSanta()
 	State$ = SantaSPR.State$
 
@@ -133,6 +132,139 @@ Function DoSanta()
 		EndIf
 	EndIf
 EndFunction
+
+Function DoBear()
+	If NextBear# <= Timer()
+		AddBear()
+		NextBear# = Timer() + BearCool#
+	EndIf
+
+	If Bear.Length > -1
+		For x = Bear.Length to 0 Step -1
+			ThisBear = Bear[x].ID
+			BearX# = GetSpriteXByOffset(ThisBear)
+			If Bear[x].State$ = "running"
+				If BearX# <= 4*Tilesize#
+					Bear[x].State$ = "returning"
+					PlaySprite(ThisBear, 10,1,7,9)
+				Else
+					ThisX# = BearX# - (Bear[x].Speed#*GetFrameTime())
+					SetSpritePositionByOffset(ThisBear, ThisX#, GetSpriteYByOffset(ThisBear) )
+					For ThisGift = 0 to Gifts.Length
+						If GetSpriteCollision(ThisBear, Gifts[ThisGift]) = 1
+							SetSpriteGroup(Gifts[ThisGift], BearGroup)
+							Bear[x].GiftID = Gifts[ThisGift]
+							Gifts.Remove(ThisGift)
+							Bear[x].State$ = "returning"
+							Bear[x].Speed# = Bear[x].Speed# * 2.0  // Bear[y].Speed# = 200.0 // Speed# = Speed# * 1.5 and Speed# = Speed# * 2.0
+							PlaySprite(ThisBear, 10,1,7,9)
+							Exit
+						EndIf
+					Next ThisGift
+				EndIf
+			EndIf
+
+			If Bear[x].State$ = "returning"
+				If BearX# > 640.0
+					If Bear[x].GiftID > 0
+						INC BearGifts
+						SetTextString(BearTXT, "Bear" + CHR(10) + STR(BearGifts) )
+						PlaySound(BellBearSND)
+						DeleteSprite(Bear[x].GiftID)
+						AddGift()
+
+					EndIf
+					DeleteSprite(ThisBear)
+					Bear.Remove(x)
+					AddBear()
+				Else
+					ThisX# = BearX# + (Bear[x].Speed#*GetFrameTime())
+					SetSpritePositionByOffset(ThisBear, ThisX#, GetSpriteYByOffset(ThisBear) )
+					If Bear[x].GiftID > 0
+						SetSpritePositionByOffset(Bear[x].GiftID, ThisX# + 20, GetSpriteYByOffset(ThisBear)+4)
+					EndIf
+				EndIf
+			EndIf
+		Next x
+
+	EndIf
+EndFunction
+
+Function DoElves()
+	For x = Elves.Length to 0 Step -1
+		If Elves[x].State$ = "running"
+			ThisElf = Elves[x].ID
+			ElfX# = GetSpriteXByOffset(ThisElf)
+			TargetX# = 600.0
+			Move# = Elves[x].Speed#*GetFrameTime()
+
+			For ThisGift = Gifts.Length to 0 Step -1
+				If GetSpriteCollision(ThisElf, Gifts[ThisGift]) = 1
+					Elves[x].GiftID = Gifts[ThisGift]
+					Gifts.Remove(ThisGift)
+					Elves[x].State$ = "returning"
+					PlaySprite(ThisElf,20,1,4,6)
+					Exit
+				EndIf
+			Next ThisGift
+
+			If Bear.Length > -1
+				For ThisBear = Bear.Length to 0 Step -1
+					If GetSpriteExists(Bear[ThisBear].ID) = 1
+						If GetSpriteCollision(ThisElf, Bear[ThisBear].ID) = 1
+							Elves[x].State$ = "returning"
+							Bear[ThisBear].Speed# = Bear[ThisBear].Speed# * 1.5
+							PlaySprite(ThisElf,20,1,4,6)
+							Exit
+						EndIf
+					EndIf
+				Next ThisBear
+			EndIf
+
+			If ABS(ElfX#-TargetX#) <= Move#
+				Elves[x].State$ = "returning"
+				PlaySprite(ThisElf,20,1,4,6)
+			Else
+				SetSpritePositionByOffset(ThisElf, ElfX# + Move#, GetSpriteYByOffset(ThisElf))
+			EndIf
+		EndIf
+
+		If Elves[x].State$ = "returning"
+			ThisElf = Elves[x].ID
+			ElfX# = GetSpriteXByOffset(ThisElf)
+			TargetX# = Elves[x].X
+			Move# = Elves[x].Speed#*GetFrameTime()
+
+			If ABS(ElfX#-TargetX#) <= Move#
+				Elves[x].State$ = "ready"
+				If Elves[x].GiftID > 0
+					INC SantaGifts
+					SetTextString(SantaTXT, "Santa" + CHR(10) + STR(SantaGifts) )
+					PlaySound(BellSND)
+					`GiftIndex = Gifts.Find(Elves[x].GiftID)
+					// Gifts.Remove(GiftIndex)
+					DeleteSprite(Elves[x].GiftID)
+					Elves[x].GiftID = 0
+					AddGift()
+				EndIf
+
+				StopSprite(ThisElf)
+				SetSpriteFrame(ThisElf,7)
+
+			Else
+				SetSpritePositionByOffset(ThisElf, ElfX# - Move#, GetSpriteYByOffset(ThisElf))
+				If Elves[x].GiftID > 0
+					GX# = GetSpriteXByOffset(ThisElf) - 10
+					GY# = GetSpriteYByOffset(ThisElf)
+					SetSpritePositionByOffset(Elves[x].GiftID, GX#, GY#)
+				EndIf
+			EndIf
+		EndIf
+
+	Next x
+
+EndFunction
+
 =end
 end
 
